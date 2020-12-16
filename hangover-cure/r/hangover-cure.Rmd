@@ -1,0 +1,78 @@
+---
+title: 'Chart Remake - Google Trends: Hangover Cure'
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged
+  pdf_document: default
+---
+
+This is a remake of chartr.co plot using tidyverse. The plot shows the google trend for "Hangover Cure" searches over a period of 90 days.
+
+
+```{r echo=FALSE}
+library(tidyverse)
+```
+
+# Data 💰
+We start by loading the data and printing first few rows.
+
+```{r}
+df <- read_csv("../data/us-90days.csv")
+head(df, 3)
+```
+
+Print some basic stats about our data.
+
+```{r}
+summary(df)
+```
+
+We are going to rename the columns to make it easier to reference them. And while we are at it, we will add weekday column that represents day of the week.
+```{r}
+df <- df %>%
+  rename("Count"="hangover cure: (United States)") %>%
+  mutate("weekday"=weekdays(Day))
+
+```
+
+
+# Plot 📈
+
+We now everything we need to plot the data. Let us create the line chart and add other things on top of it.
+
+```{r}
+library(ggplot2)
+plt <- ggplot(df, aes(Day, Count)) + 
+  geom_line() +
+  scale_x_date(date_breaks = "weeks", date_labels = "%b-%d") +
+  labs(title = "Data is beautiful. Hangovers are not", x="", y="Google Search Volume (Indexed, 100 = Maximum)") + 
+  theme(axis.text.x = element_text(angle=45, hjust=1), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "darkgray")
+        )
+
+plt
+```
+
+Next, We need to add the vertical lines to highlight the weekends.
+
+```{r}
+plt <- plt + geom_vline(aes(xintercept=Day), 
+                 data=df %>% filter(weekday %in% c("Saturday", "Sunday")), color="gray", 
+                 alpha=0.3, size=2.3)
+plt
+```
+
+Notice the huge spike around 6th of July - something to do with the long weeked, eh.
+
+Now, all that is left is the annotation. and while we are at it, let's center the title and add subtitle.
+
+```{r}
+weekends_df <- df %>% filter(weekday %in% c("Saturday", "Sunday"))
+plt + annotate(geom = "text", x=weekends_df$Day[6], y=8, label="Saturday & Sunday", color="darkblue", size=2) + 
+  labs(title="Data is Beautiful. Hangovers Are Not", subtitle = "[Google Search Volume for \"hangover cure\"]") +
+  theme(plot.title = element_text(size=20, colour = "darkblue", hjust = 0.4),
+        plot.subtitle = element_text(size=10, colour = "black", hjust = 0.4))
+```
+
+And that's it folks😎.
